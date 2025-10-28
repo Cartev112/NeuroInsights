@@ -10,6 +10,17 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 
+# Ensure Uvicorn doesn't reset our level back to INFO after startup
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+for handler in root_logger.handlers:
+    handler.setLevel(logging.DEBUG)
+
+# Explicitly bump our app namespaces in case propagation is altered
+logging.getLogger("app").setLevel(logging.DEBUG)
+logging.getLogger("app.services").setLevel(logging.DEBUG)
+logging.getLogger("app.api").setLevel(logging.DEBUG)
+
 
 settings = get_settings()
 
