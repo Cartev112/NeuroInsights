@@ -40,7 +40,14 @@ if settings.ENVIRONMENT == "production":
     if frontend_url:
         allowed_origins.append(frontend_url.rstrip("/"))
 
-    allow_origin_regex = r"https://([a-zA-Z0-9-]+\.)?railway\.app"
+    railway_public_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN") or os.getenv("RAILWAY_URL")
+    if railway_public_domain:
+        sanitized = railway_public_domain.rstrip("/")
+        if not sanitized.startswith("http"):
+            sanitized = f"https://{sanitized}"
+        allowed_origins.append(sanitized)
+
+    allow_origin_regex = r"^https://([a-zA-Z0-9-]+\.)?railway\.app$"
 else:
     allowed_origins = ["*"]
 
