@@ -1,0 +1,8 @@
+# Frontend-specific ignore
+node_modules/
+.next/
+out/
+dist/
+
+# Don't need backend files in frontend service
+../backend/

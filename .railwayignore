@@ -1,0 +1,33 @@
+# Ignore Docker files
+docker-compose.yml
+Dockerfile
+Dockerfile.dev
+.dockerignore
+
+# Ignore local development
+.env
+.env.local
+venv/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Ignore build artifacts
+dist/
+build/
+*.egg-info/
+
+# Ignore IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+logs/

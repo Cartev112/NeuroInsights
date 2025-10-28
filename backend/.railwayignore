@@ -1,0 +1,9 @@
+# Backend-specific ignore
+tests/
+*.test.py
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Don't need frontend files in backend service
+../frontend/
