@@ -24,7 +24,7 @@ if os.getenv("RAILWAY_ENVIRONMENT"):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if settings.ENVIRONMENT == "production" else ["*"],
+    allow_origin_regex=r"https://.*\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
