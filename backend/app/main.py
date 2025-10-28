@@ -15,16 +15,21 @@ app = FastAPI(
 
 # CORS - Allow Railway frontend
 allowed_origins = settings.CORS_ORIGINS.copy()
-# Add Railway preview URLs and production URLs
-if os.getenv("RAILWAY_ENVIRONMENT"):
-    allowed_origins.extend([
-        "https://*.railway.app",
-        "https://*.up.railway.app"
-    ])
+allow_origin_regex = None
+
+if settings.ENVIRONMENT == "production":
+    frontend_url = os.getenv("FRONTEND_URL")
+    if frontend_url:
+        allowed_origins.append(frontend_url.rstrip("/"))
+
+    allow_origin_regex = r"https://([a-zA-Z0-9-]+\.)?railway\.app"
+else:
+    allowed_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.railway\.app",
+    allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
