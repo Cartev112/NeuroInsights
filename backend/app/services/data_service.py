@@ -5,9 +5,12 @@ from datetime import datetime, timedelta
 from uuid import UUID
 import json
 import random
+import logging
 
 from app.core.mock_data.generators import mock_data_provider
 from app.models.schemas import BrainDataPointResponse, StateDistribution
+
+logger = logging.getLogger(__name__)
 
 
 class DataService:
@@ -27,12 +30,24 @@ class DataService:
         Get brain data for a time range
         """
         
+        logger.debug(
+            "get_brain_data called",
+            extra={
+                "user_id": str(user_id),
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "granularity": granularity,
+            },
+        )
+
         # Calculate duration
         duration_minutes = int((end_time - start_time).total_seconds() / 60)
+        logger.debug("Initial duration_minutes=%s", duration_minutes)
         
         # Ensure minimum duration
         if duration_minutes < 1:
             duration_minutes = 1
+            logger.debug("Duration adjusted to minimum minute: %s", duration_minutes)
         
         # Get generator
         generator = self.mock_provider.get_generator(user_id)
@@ -45,6 +60,7 @@ class DataService:
             # Use a pre-built scenario for a more realistic day
             scenarios = ['typical_workday', 'productive_morning', 'creative_work']
             scenario_name = random.choice(scenarios)
+            logger.debug("Using scenario %s for today's data", scenario_name)
             
             # Generate from scenario but adjust to requested time range
             from app.core.mock_data.patterns import SCENARIOS
@@ -61,6 +77,14 @@ class DataService:
                     p for p in session['data_points']
                     if p['time'] < end_time
                 ]
+                logger.debug(
+                    "Truncated scenario points",
+                    extra={
+                        "requested_duration": duration_minutes,
+                        "scenario_duration": scenario['duration'],
+                        "points_after": len(session['data_points']),
+                    },
+                )
             else:
                 session = generator.generate_session_from_scenario(
                     scenario_name,
@@ -70,6 +94,7 @@ class DataService:
             # Generate custom session with varied states
             primary_states = ['deep_focus', 'relaxed', 'creative_flow', 'neutral']
             primary_state = random.choice(primary_states)
+            logger.debug("Using custom session with primary_state=%s", primary_state)
             
             session = generator.generate_custom_session(
                 duration_minutes=duration_minutes,
@@ -84,6 +109,15 @@ class DataService:
                 session['data_points'],
                 granularity
             )
+            logger.debug(
+                "Aggregated data points",
+                extra={
+                    "granularity": granularity,
+                    "points": len(session['data_points']),
+                },
+            )
+        else:
+            logger.debug("Generated raw data points: %s", len(session['data_points']))
         
         return session['data_points']
     
@@ -98,6 +132,7 @@ class DataService:
         """
         
         data_points = await self.get_brain_data(user_id, start_time, end_time)
+        logger.debug("Calculating state distribution for %s points", len(data_points))
         
         # Count states
         state_counts = {
@@ -134,7 +169,9 @@ class DataService:
                 'neutral': 10.0
             }
         
-        return StateDistribution(**distribution)
+        result = StateDistribution(**distribution)
+        logger.debug("State distribution result: %s", result.model_dump())
+        return result
     
     async def get_cognitive_score(
         self,
@@ -147,11 +184,14 @@ class DataService:
         """
         
         data_points = await self.get_brain_data(user_id, start_time, end_time)
+        logger.debug("Calculating cognitive score with %s data points", len(data_points))
         
         if not data_points:
+            logger.debug("No data points found; returning default cognitive score")
             return 70  # Default score
         
         distribution = await self.get_state_distribution(user_id, start_time, end_time)
+        logger.debug("Distribution for score calc: %s", distribution.model_dump())
         
         # Calculate score based on:
         # - Focus time (deep_focus + creative_flow)
@@ -165,6 +205,7 @@ class DataService:
         
         score = 50 + focus_score - stress_penalty - drowsy_penalty - distracted_penalty
         score = max(0, min(100, int(score)))
+        logger.debug("Computed cognitive score: %s", score)
         
         return score
     

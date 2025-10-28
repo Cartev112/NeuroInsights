@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { dataApi } from '@/services/api'
 import { StateDistributionChart } from '@/components/dashboard/StateDistributionChart'
@@ -9,7 +10,12 @@ export function DashboardPage() {
   const now = new Date()
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   
-  const { data: stateData, isLoading: stateLoading } = useQuery({
+  const {
+    data: stateData,
+    isLoading: stateLoading,
+    error: stateError,
+    status: stateStatus,
+  } = useQuery({
     queryKey: ['stateDistribution', 'today'],
     queryFn: () => dataApi.getStateDistribution(
       startOfDay.toISOString(),
@@ -17,7 +23,12 @@ export function DashboardPage() {
     ),
   })
 
-  const { data: scoreData, isLoading: scoreLoading } = useQuery({
+  const {
+    data: scoreData,
+    isLoading: scoreLoading,
+    error: scoreError,
+    status: scoreStatus,
+  } = useQuery({
     queryKey: ['cognitiveScore', 'today'],
     queryFn: () => dataApi.getCognitiveScore(
       startOfDay.toISOString(),
@@ -25,7 +36,12 @@ export function DashboardPage() {
     ),
   })
 
-  const { data: brainWaveData, isLoading: waveLoading } = useQuery({
+  const {
+    data: brainWaveData,
+    isLoading: waveLoading,
+    error: waveError,
+    status: waveStatus,
+  } = useQuery({
     queryKey: ['brainWaves', 'today'],
     queryFn: () => dataApi.getBrainWaves(
       startOfDay.toISOString(),
@@ -34,7 +50,24 @@ export function DashboardPage() {
     ),
   })
 
+  useEffect(() => {
+    console.debug('[Dashboard] state query', { stateStatus, stateData, stateError })
+  }, [stateStatus, stateData, stateError])
+
+  useEffect(() => {
+    console.debug('[Dashboard] score query', { scoreStatus, scoreData, scoreError })
+  }, [scoreStatus, scoreData, scoreError])
+
+  useEffect(() => {
+    console.debug('[Dashboard] brain wave query', { waveStatus, brainWaveData, waveError })
+  }, [waveStatus, brainWaveData, waveError])
+
   const isLoading = stateLoading || scoreLoading || waveLoading
+  const hasError = stateError || scoreError || waveError
+
+  if (hasError) {
+    console.error('[Dashboard] query error', { stateError, scoreError, waveError })
+  }
 
   if (isLoading) {
     return (

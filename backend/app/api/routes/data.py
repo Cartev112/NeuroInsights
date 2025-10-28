@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
+import logging
 
 from app.models.schemas import (
     BrainDataPointResponse,
@@ -14,6 +15,7 @@ from app.models.schemas import (
 from app.services.data_service import get_data_service
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Mock user ID for MVP
 MOCK_USER_ID = UUID('12345678-1234-5678-1234-567812345678')
@@ -29,12 +31,22 @@ async def get_brain_waves(
     """Get brain wave data for a time range"""
     
     try:
+        logger.debug(
+            "API /brain-waves request",
+            extra={
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "granularity": granularity,
+            },
+        )
+
         data = await data_service.get_brain_data(
             MOCK_USER_ID,
             start_time,
             end_time,
             granularity
         )
+        logger.debug("Returning %s brain wave points", len(data))
         
         return {
             "start_time": start_time,
@@ -56,11 +68,20 @@ async def get_state_distribution(
     """Get cognitive state distribution"""
     
     try:
+        logger.debug(
+            "API /state-distribution request",
+            extra={
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
         distribution = await data_service.get_state_distribution(
             MOCK_USER_ID,
             start_time,
             end_time
         )
+        logger.debug("State distribution payload: %s", distribution.model_dump())
         
         return distribution
         
@@ -77,11 +98,20 @@ async def get_cognitive_score(
     """Get cognitive fitness score"""
     
     try:
+        logger.debug(
+            "API /cognitive-score request",
+            extra={
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+            },
+        )
+
         score = await data_service.get_cognitive_score(
             MOCK_USER_ID,
             start_time,
             end_time
         )
+        logger.debug("Cognitive score response: %s", score)
         
         return {
             "start_time": start_time,
@@ -104,6 +134,16 @@ async def find_patterns(
     """Find patterns in brain data"""
     
     try:
+        logger.debug(
+            "API /patterns request",
+            extra={
+                "pattern_type": pattern_type,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "activity": activity,
+            },
+        )
+
         patterns = await data_service.find_patterns(
             MOCK_USER_ID,
             pattern_type,
@@ -111,6 +151,7 @@ async def find_patterns(
             end_time,
             activity
         )
+        logger.debug("Patterns result keys: %s", list(patterns.keys()) if isinstance(patterns, dict) else type(patterns))
         
         return patterns
         
