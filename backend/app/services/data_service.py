@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from uuid import UUID
 import json
+import random
 
 from app.core.mock_data.generators import mock_data_provider
 from app.models.schemas import BrainDataPointResponse, StateDistribution
@@ -26,18 +27,56 @@ class DataService:
         Get brain data for a time range
         """
         
-        # For now, generate mock data on the fly
-        generator = self.mock_provider.get_generator(user_id)
-        
+        # Calculate duration
         duration_minutes = int((end_time - start_time).total_seconds() / 60)
         
-        # Generate session
-        session = generator.generate_custom_session(
-            duration_minutes=duration_minutes,
-            primary_state='deep_focus',
-            start_time=start_time,
-            include_transitions=True
-        )
+        # Ensure minimum duration
+        if duration_minutes < 1:
+            duration_minutes = 1
+        
+        # Get generator
+        generator = self.mock_provider.get_generator(user_id)
+        
+        # For today's data, use a realistic scenario
+        # Check if this is "today" based on the start_time
+        is_today = start_time.date() == datetime.now().date()
+        
+        if is_today and duration_minutes > 60:
+            # Use a pre-built scenario for a more realistic day
+            scenarios = ['typical_workday', 'productive_morning', 'creative_work']
+            scenario_name = random.choice(scenarios)
+            
+            # Generate from scenario but adjust to requested time range
+            from app.core.mock_data.patterns import SCENARIOS
+            scenario = SCENARIOS.get(scenario_name, SCENARIOS['typical_workday'])
+            
+            # If requested duration is less than scenario, truncate
+            if duration_minutes < scenario['duration']:
+                session = generator.generate_session_from_scenario(
+                    scenario_name,
+                    start_time
+                )
+                # Truncate data points to requested duration
+                session['data_points'] = [
+                    p for p in session['data_points']
+                    if p['time'] < end_time
+                ]
+            else:
+                session = generator.generate_session_from_scenario(
+                    scenario_name,
+                    start_time
+                )
+        else:
+            # Generate custom session with varied states
+            primary_states = ['deep_focus', 'relaxed', 'creative_flow', 'neutral']
+            primary_state = random.choice(primary_states)
+            
+            session = generator.generate_custom_session(
+                duration_minutes=duration_minutes,
+                primary_state=primary_state,
+                start_time=start_time,
+                include_transitions=True
+            )
         
         # Apply granularity
         if granularity != "minute":
@@ -84,7 +123,16 @@ class DataService:
                 for state, count in state_counts.items()
             }
         else:
-            distribution = state_counts
+            # Return default distribution if no data
+            distribution = {
+                'deep_focus': 25.0,
+                'relaxed': 20.0,
+                'stressed': 10.0,
+                'creative_flow': 15.0,
+                'drowsy': 10.0,
+                'distracted': 10.0,
+                'neutral': 10.0
+            }
         
         return StateDistribution(**distribution)
     
@@ -99,6 +147,10 @@ class DataService:
         """
         
         data_points = await self.get_brain_data(user_id, start_time, end_time)
+        
+        if not data_points:
+            return 70  # Default score
+        
         distribution = await self.get_state_distribution(user_id, start_time, end_time)
         
         # Calculate score based on:
@@ -195,6 +247,10 @@ class DataService:
             hour = current.hour
             hour_end = current + timedelta(hours=1)
             
+            # Make sure we don't go past end_time
+            if hour_end > end_time:
+                hour_end = end_time
+            
             score = await self.get_cognitive_score(user_id, current, hour_end)
             
             if hour not in hourly_scores:
@@ -207,10 +263,14 @@ class DataService:
         avg_by_hour = {
             hour: sum(scores) / len(scores)
             for hour, scores in hourly_scores.items()
+            if len(scores) > 0
         }
         
         # Find best hours
-        best_hours = sorted(avg_by_hour.items(), key=lambda x: x[1], reverse=True)[:3]
+        if avg_by_hour:
+            best_hours = sorted(avg_by_hour.items(), key=lambda x: x[1], reverse=True)[:3]
+        else:
+            best_hours = []
         
         return {
             "pattern_type": "time_of_day",
@@ -257,11 +317,14 @@ class DataService:
         if current_window and current_window['duration'] >= 15:
             focus_windows.append(current_window)
         
+        total_focus_time = sum(w['duration'] for w in focus_windows)
+        avg_duration = total_focus_time / len(focus_windows) if focus_windows else 0
+        
         return {
             "pattern_type": "focus_windows",
             "windows": focus_windows,
-            "total_focus_time": sum(w['duration'] for w in focus_windows),
-            "avg_window_duration": sum(w['duration'] for w in focus_windows) / len(focus_windows) if focus_windows else 0
+            "total_focus_time": total_focus_time,
+            "avg_window_duration": round(avg_duration, 1)
         }
     
     def _aggregate_data(
@@ -273,7 +336,7 @@ class DataService:
         Aggregate data points by granularity
         """
         
-        if granularity == "minute":
+        if granularity == "minute" or not data_points:
             return data_points
         
         # Determine window size
