@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { format, parseISO } from 'date-fns'
+import { format } from 'date-fns'
 import type { BrainDataPoint } from '@/types/brain-data'
 
 interface BrainWaveChartProps {
@@ -7,15 +7,6 @@ interface BrainWaveChartProps {
 }
 
 export function BrainWaveChart({ data }: BrainWaveChartProps) {
-  const parseTimestamp = (value: string) => {
-    if (!value) {
-      return new Date()
-    }
-
-    const normalized = value.endsWith('Z') || value.includes('+') ? value : `${value}Z`
-    return parseISO(normalized)
-  }
-
   if (!data || data.length === 0) {
     return (
       <div className="bg-card rounded-lg border border-border p-6">
@@ -26,7 +17,7 @@ export function BrainWaveChart({ data }: BrainWaveChartProps) {
   }
 
   const chartData = data.map((point) => ({
-    time: format(parseTimestamp(point.time), 'HH:mm'),
+    time: format(new Date(point.time), 'HH:mm'),
     Delta: point.delta,
     Theta: point.theta,
     Alpha: point.alpha,
