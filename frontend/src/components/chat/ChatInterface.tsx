@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from "react"
 import {
   Send,
   Loader2,
@@ -7,21 +7,23 @@ import {
   MessageCircle,
   BarChart3,
   Clock,
-} from 'lucide-react'
-import { chatApi } from '@/services/api'
-import type { Message } from '@/types/brain-data'
+} from "lucide-react"
+import { chatApi } from "@/services/api"
+import type { Message } from "@/types/brain-data"
 
 const SUGGESTIONS = [
-  'How did my focus change compared to yesterday?',
-  'Summarize my stress patterns over the last week.',
-  'When do I enter deep focus most often?',
-  'Give me recommendations to improve my creative flow.',
+  "How did my focus change compared to yesterday?",
+  "Summarize my stress patterns over the last week.",
+  "When do I enter deep focus most often?",
+  "Give me recommendations to improve my creative flow.",
 ]
 
-const formatLine = (line: string) => line.replace(/^[-–•]\s*/, '').trim()
+const BULLET_PATTERN = /^(-|\*|\u2022)\s*/
+
+const formatLine = (line: string) => line.replace(BULLET_PATTERN, "").trim()
 
 const highlightTokens = (text: string): (string | JSX.Element)[] => {
-  if (!text) return ['']
+  if (!text) return [""]
   const regex = /(\d+\.?\d*%|\b\d+\b|deep focus|stress)/gi
   const parts = text.split(regex)
   const matches = text.match(regex)
@@ -45,13 +47,13 @@ const highlightTokens = (text: string): (string | JSX.Element)[] => {
 }
 
 const renderMessageContent = (content: string) => {
-  const lines = content.split('\n')
+  const lines = content.split("\n")
   const blocks: JSX.Element[] = []
   let currentList: string[] = []
 
   lines.forEach((line, idx) => {
     const trimmed = line.trim()
-    const isBullet = /^[-–•]/.test(trimmed)
+    const isBullet = BULLET_PATTERN.test(trimmed)
 
     if (isBullet) {
       currentList.push(formatLine(trimmed))
@@ -96,10 +98,10 @@ const renderMessageContent = (content: string) => {
 }
 
 const MessageBubble = ({ message }: { message: Message }) => {
-  const isUser = message.role === 'user'
+  const isUser = message.role === "user"
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div className="flex max-w-[75%] items-start gap-3">
         {!isUser && (
           <div className="hidden md:flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/25">
@@ -110,14 +112,14 @@ const MessageBubble = ({ message }: { message: Message }) => {
           className={`group rounded-2xl border px-5 py-4 shadow-lg transition backdrop-blur
             ${
               isUser
-                ? 'border-white/25 bg-white/15 text-foreground shadow-black/20'
-                : 'border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-transparent text-foreground shadow-primary/20'
+                ? "border-white/25 bg-white/15 text-foreground shadow-black/20"
+                : "border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-transparent text-foreground shadow-primary/20"
             }
           `}
         >
           <div className="mb-2 flex items-center gap-3">
             <span className="text-xs uppercase tracking-[0.3em] text-primary/80">
-              {isUser ? 'You' : 'NeuroInsights'}
+              {isUser ? "You" : "NeuroInsights"}
             </span>
             {!isUser && (
               <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
@@ -136,17 +138,17 @@ const MessageBubble = ({ message }: { message: Message }) => {
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
-      role: 'assistant',
+      role: "assistant",
       content:
-        'Hi! I\'m your NeuroInsights AI assistant. Ask me anything about your brain data. Try questions like:\n\n• "How was my focus today?"\n• "Show me my brain state distribution for the last 7 days"\n• "When am I most focused during the day?"\n• "Compare my stress levels today vs yesterday"',
+        "Hi! I'm your NeuroInsights AI assistant. Ask me anything about your brain data. Try questions like:\n\n- \"How was my focus today?\"\n- \"Show me my brain state distribution for the last 7 days\"\n- \"When am I most focused during the day?\"\n- \"Compare my stress levels today vs yesterday\"",
     },
   ])
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   useEffect(() => {
@@ -157,29 +159,29 @@ export function ChatInterface() {
     if (!input.trim() || isLoading) return
 
     const userMessage: Message = {
-      role: 'user',
+      role: "user",
       content: input,
     }
 
     setMessages((prev) => [...prev, userMessage])
-    setInput('')
+    setInput("")
     setIsLoading(true)
 
     try {
       const response = await chatApi.sendMessage(userMessage.content)
 
       const assistantMessage: Message = {
-        role: 'assistant',
+        role: "assistant",
         content: response.response,
       }
 
       setMessages((prev) => [...prev, assistantMessage])
     } catch (error) {
-      console.error('Chat error:', error)
+      console.error("Chat error:", error)
       const errorMessage: Message = {
-        role: 'assistant',
+        role: "assistant",
         content:
-          'Sorry, I encountered an error. Please make sure the backend is running and try again.',
+          "Sorry, I encountered an error. Please make sure the backend is running and try again.",
       }
       setMessages((prev) => [...prev, errorMessage])
     } finally {
@@ -188,7 +190,7 @@ export function ChatInterface() {
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
