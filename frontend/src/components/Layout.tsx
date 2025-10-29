@@ -7,9 +7,9 @@ export function Layout() {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -22,10 +22,14 @@ export function Layout() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   isActive('/chat')
                     ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-accent'
+                    : 'hover:bg-accent/60'
                 }`}
               >
-                <MessageSquare className="h-5 w-5" />
+                <MessageSquare
+                  className={`h-5 w-5 ${
+                    isActive('/chat') ? 'text-primary-foreground' : 'text-primary'
+                  }`}
+                />
                 <span>Chat</span>
               </Link>
               <Link
@@ -33,10 +37,14 @@ export function Layout() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   isActive('/dashboard')
                     ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-accent'
+                    : 'hover:bg-accent/60'
                 }`}
               >
-                <LayoutDashboard className="h-5 w-5" />
+                <LayoutDashboard
+                  className={`h-5 w-5 ${
+                    isActive('/dashboard') ? 'text-primary-foreground' : 'text-primary'
+                  }`}
+                />
                 <span>Dashboard</span>
               </Link>
               <Link
@@ -44,10 +52,14 @@ export function Layout() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   isActive('/insights')
                     ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-accent'
+                    : 'hover:bg-accent/60'
                 }`}
               >
-                <Lightbulb className="h-5 w-5" />
+                <Lightbulb
+                  className={`h-5 w-5 ${
+                    isActive('/insights') ? 'text-primary-foreground' : 'text-primary'
+                  }`}
+                />
                 <span>Insights</span>
               </Link>
             </nav>
