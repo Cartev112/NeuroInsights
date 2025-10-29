@@ -10,16 +10,16 @@ export function Layout() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Brain className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold">NeuroInsights</h1>
+              <Brain className="h-7 w-7 text-primary" />
+              <h1 className="text-xl font-bold">NeuroInsights</h1>
             </div>
-            <nav className="flex gap-6">
+            <nav className="flex gap-5">
               <Link
                 to="/chat"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
                   isActive('/chat')
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-accent/60'
@@ -34,7 +34,7 @@ export function Layout() {
               </Link>
               <Link
                 to="/dashboard"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
                   isActive('/dashboard')
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-accent/60'
@@ -49,7 +49,7 @@ export function Layout() {
               </Link>
               <Link
                 to="/insights"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
                   isActive('/insights')
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-accent/60'
@@ -74,3 +74,4 @@ export function Layout() {
     </div>
   )
 }
+

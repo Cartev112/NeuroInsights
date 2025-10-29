@@ -90,23 +90,25 @@ const SlideContent = ({
 
   return (
     <div
-      className={`mx-auto w-full max-w-5xl rounded-3xl border border-border/50 bg-card/70 p-10 shadow-[0_25px_80px_-50px_rgba(124,58,237,0.45)] backdrop-blur transition-all duration-400 ${
+      className={`mx-auto w-full max-w-5xl rounded-3xl border border-border/50 bg-card/70 p-10 shadow-[0_25px_80px_-50px_rgba(124,58,237,0.45)] backdrop-blur transition-all duration-400 h-[60vh] ${
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
       }`}
     >
-      {slide.type === "summary" && slide.data && renderSummarySection(slide.data)}
-      {slide.type === "metrics" && renderMetricsSection()}
-      {slide.type === "tips" && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 text-left">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20">
-              <Sparkles className="h-5 w-5 text-primary" />
+      <div className="h-full overflow-y-auto pr-4 space-y-6">
+        {slide.type === "summary" && slide.data && renderSummarySection(slide.data)}
+        {slide.type === "metrics" && renderMetricsSection()}
+        {slide.type === "tips" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-left">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">Quick Tips</h3>
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Quick Tips</h3>
+            {renderTipsSection()}
           </div>
-          {renderTipsSection()}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -146,7 +148,7 @@ export function InsightsPage() {
     : undefined
 
   const renderSummarySection = (section: SectionBlock) => (
-    <div className="mx-auto w-full max-w-3xl space-y-4 text-left text-[0.95rem] leading-relaxed text-foreground/95">
+    <div className="mx-auto w-full max-w-3xl space-y-4 text-left text-[1.05rem] leading-relaxed text-foreground/95">
       <h4 className="text-base font-semibold text-primary">{section.title}</h4>
       {section.paragraphs.map((paragraph, index) => (
         <p key={`paragraph-${index}`}>{renderInlineMarkdown(paragraph)}</p>
@@ -169,7 +171,7 @@ export function InsightsPage() {
     if (!metrics) return null
 
     return (
-      <div className="mx-auto grid w-full max-w-4xl gap-6 text-left text-[0.95rem] leading-relaxed text-foreground/95 sm:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-4xl gap-6 text-left text-[1.05rem] leading-relaxed text-foreground/95 sm:grid-cols-2">
         <div className="rounded-3xl border border-border/40 bg-secondary/30 p-6 shadow-inner shadow-primary/10">
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Cognitive Score</p>
           <p className="mt-3 text-4xl font-semibold text-primary">{metrics.cognitive_score}</p>
@@ -209,7 +211,7 @@ export function InsightsPage() {
   }
 
   const renderTipsSection = () => (
-    <div className="mx-auto w-full max-w-3xl space-y-3 text-left text-[0.95rem] leading-relaxed text-foreground/95">
+    <div className="mx-auto w-full max-w-3xl space-y-3 text-left text-[1.05rem] leading-relaxed text-foreground/95">
       {[
         "Ask the chat assistant targeted questions to dive deeper into your patterns.",
         "Review your dashboard daily to monitor how focus and stress evolve.",
@@ -297,3 +299,6 @@ export function InsightsPage() {
     </div>
   )
 }
+
+
+
