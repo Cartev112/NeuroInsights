@@ -1,16 +1,14 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { insightsApi } from '@/services/api'
+import { useMemo, useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { insightsApi } from "@/services/api"
 import {
   Lightbulb,
   TrendingUp,
   Loader2,
-  Target,
+  ChevronLeft,
+  ChevronRight,
   Sparkles,
-  ClipboardCheck,
-  Compass,
-  Zap,
-} from 'lucide-react'
+} from "lucide-react"
 
 type SectionBlock = {
   title: string
@@ -18,28 +16,24 @@ type SectionBlock = {
   bullets: string[]
 }
 
-const iconBySection = (title: string) => {
-  const normalized = title.toLowerCase()
-  if (normalized.includes('overall')) return <Target className="h-5 w-5 text-primary" />
-  if (normalized.includes('highlight')) return <Sparkles className="h-5 w-5 text-primary" />
-  if (normalized.includes('improvement')) return <Compass className="h-5 w-5 text-primary" />
-  if (normalized.includes('pattern') || normalized.includes('transition'))
-    return <Zap className="h-5 w-5 text-primary" />
-  if (normalized.includes('recommend')) return <ClipboardCheck className="h-5 w-5 text-primary" />
-  return <Lightbulb className="h-5 w-5 text-primary" />
+type Slide = {
+  type: "summary" | "metrics" | "tips"
+  data?: any
 }
+
+const BULLET_REGEX = /^(-|\*|\u2022|\u2013)\s*/
 
 const parseSummarySections = (summary?: string): SectionBlock[] => {
   if (!summary) return []
 
-  const normalized = summary.replace(/\r/g, '')
+  const normalized = summary.replace(/\r/g, "")
   const sections = normalized.split(/\n(?=####\s+)/g)
 
   return sections
     .map((section) => {
-      const lines = section.trim().split('\n').filter((line) => line.trim().length > 0)
-      const titleLine = lines[0] || ''
-      const title = titleLine.replace(/^####\s*/, '').trim()
+      const lines = section.trim().split("\n").filter((line) => line.trim().length > 0)
+      const titleLine = lines[0] || ""
+      const title = titleLine.replace(/^####\s*/, "").trim()
       const contentLines = lines.slice(1)
       if (!title || contentLines.length === 0) return null
 
@@ -48,8 +42,8 @@ const parseSummarySections = (summary?: string): SectionBlock[] => {
 
       contentLines.forEach((line) => {
         const trimmed = line.trim()
-        if (/^[-–•]/.test(trimmed)) {
-          bullets.push(trimmed.replace(/^[-–•]\s*/, ''))
+        if (BULLET_REGEX.test(trimmed)) {
+          bullets.push(trimmed.replace(BULLET_REGEX, ""))
         } else {
           paragraphs.push(trimmed)
         }
@@ -60,196 +54,230 @@ const parseSummarySections = (summary?: string): SectionBlock[] => {
     .filter((section): section is SectionBlock => section !== null)
 }
 
-const DailySectionCard = ({ section }: { section: SectionBlock }) => (
-  <div className="rounded-2xl border border-border/50 bg-card/70 p-6 shadow-lg shadow-primary/10 backdrop-blur transition hover:border-primary/60 hover:shadow-primary/20">
-    <div className="flex items-center gap-3 mb-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
-        {iconBySection(section.title)}
-      </div>
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-primary/70">Insight</p>
-        <h4 className="text-lg font-semibold text-foreground">{section.title}</h4>
-      </div>
+type SlideContentProps = {
+  slide: Slide
+  renderSummarySection: (section: SectionBlock) => JSX.Element
+  renderMetricsSection: () => JSX.Element | null
+  renderTipsSection: () => JSX.Element
+}
+
+const SlideContent = ({
+  slide,
+  renderSummarySection,
+  renderMetricsSection,
+  renderTipsSection,
+}: SlideContentProps) => {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const animation = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(animation)
+  }, [])
+
+  return (
+    <div
+      className={`mx-auto w-full max-w-5xl rounded-3xl border border-border/50 bg-card/70 p-8 shadow-[0_25px_80px_-50px_rgba(124,58,237,0.45)] backdrop-blur transition-all duration-500 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+      }`}
+    >
+      {slide.type === "summary" && slide.data && renderSummarySection(slide.data)}
+      {slide.type === "metrics" && renderMetricsSection()}
+      {slide.type === "tips" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 text-left">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground">Quick Tips</h3>
+          </div>
+          {renderTipsSection()}
+        </div>
+      )}
     </div>
+  )
+}
 
-    <div className="space-y-3 text-sm leading-relaxed text-foreground/95">
+export function InsightsPage() {
+  const { data: dailyInsights, isLoading } = useQuery({
+    queryKey: ["dailyInsights"],
+    queryFn: () => insightsApi.getDailyInsights(),
+  })
+
+  const summarySections = useMemo(
+    () => parseSummarySections(dailyInsights?.summary),
+    [dailyInsights?.summary],
+  )
+
+  const slides: Slide[] = useMemo(() => {
+    const base: Slide[] = summarySections.map((section) => ({
+      type: "summary",
+      data: section,
+    }))
+
+    if (dailyInsights?.metrics) {
+      base.push({ type: "metrics", data: dailyInsights.metrics })
+    }
+
+    base.push({ type: "tips" })
+    return base
+  }, [summarySections, dailyInsights?.metrics])
+
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const summaryTitle =
+    dailyInsights?.summary?.match(/###\s+(.+)/)?.[1] ||
+    "Daily Summary of Cognitive Performance"
+  const summaryDateLabel = dailyInsights?.date
+    ? new Date(dailyInsights.date).toLocaleDateString()
+    : undefined
+
+  const renderSummarySection = (section: SectionBlock) => (
+    <div className="mx-auto w-full max-w-3xl space-y-5 text-left text-[1.02rem] leading-relaxed text-foreground/95">
+      <h4 className="text-lg font-semibold text-primary">{section.title}</h4>
       {section.paragraphs.map((paragraph, index) => (
-        <p key={`p-${index}`} className="text-foreground/90">
-          {paragraph}
-        </p>
+        <p key={`paragraph-${index}`}>{paragraph}</p>
       ))}
-
       {section.bullets.length > 0 && (
         <ul className="space-y-2">
           {section.bullets.map((bullet, idx) => (
-            <li key={`b-${idx}`} className="flex items-start gap-3 text-foreground/90">
-              <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary/70" />
+            <li key={`bullet-${idx}`} className="flex items-start gap-3">
+              <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/70" />
               <span>{bullet}</span>
             </li>
           ))}
         </ul>
       )}
     </div>
-  </div>
-)
-
-export function InsightsPage() {
-  const { data: dailyInsights, isLoading } = useQuery({
-    queryKey: ['dailyInsights'],
-    queryFn: () => insightsApi.getDailyInsights(),
-  })
-
-  const sections = useMemo(
-    () => parseSummarySections(dailyInsights?.summary),
-    [dailyInsights?.summary],
   )
-  const headline = dailyInsights?.summary?.match(/###\s+(.+)/)?.[1]
+
+  const renderMetricsSection = () => {
+    const metrics = dailyInsights?.metrics
+    if (!metrics) return null
+
+    return (
+      <div className="mx-auto grid w-full max-w-4xl gap-6 text-left text-[1.02rem] leading-relaxed text-foreground/95 sm:grid-cols-2">
+        <div className="rounded-3xl border border-border/40 bg-secondary/30 p-6 shadow-inner shadow-primary/10">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Cognitive Score</p>
+          <p className="mt-3 text-4xl font-semibold text-primary">{metrics.cognitive_score}</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Composite indicator reflecting focus, stress moderation, and state balance.
+          </p>
+        </div>
+        <div className="rounded-3xl border border-border/40 bg-secondary/30 p-6 shadow-inner shadow-primary/10">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Focus Time</p>
+          <p className="mt-3 text-4xl font-semibold text-primary">
+            {metrics.focus_time.toFixed(0)}%
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Percentage of the day spent in deep focus and creative flow.
+          </p>
+        </div>
+        <div className="rounded-3xl border border-border/40 bg-secondary/30 p-6 shadow-inner shadow-primary/10">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Stress Level</p>
+          <p className="mt-3 text-4xl font-semibold text-primary">
+            {metrics.stress_level.toFixed(0)}%
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Lower values indicate calmer transitions between brain states.
+          </p>
+        </div>
+        <div className="rounded-3xl border border-border/40 bg-secondary/30 p-6 shadow-inner shadow-primary/10">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Deep Focus</p>
+          <p className="mt-3 text-4xl font-semibold text-primary">
+            {metrics.state_distribution.deep_focus.toFixed(0)}%
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Your strongest contributor to today's productivity.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const renderTipsSection = () => (
+    <div className="mx-auto w-full max-w-3xl space-y-4 text-left text-[1.02rem] leading-relaxed text-foreground/95">
+      {[
+        "Ask the chat assistant targeted questions to dive deeper into your patterns.",
+        "Review your dashboard daily to monitor how focus and stress evolve.",
+        "Compare time periods to identify habits that amplify your best cognitive states.",
+      ].map((tip, idx) => (
+        <div
+          key={idx}
+          className="flex items-start gap-3 rounded-3xl border border-border/40 bg-secondary/30 p-5 shadow-inner shadow-primary/10"
+        >
+          <span className="mt-[6px] h-2 w-2 flex-shrink-0 rounded-full bg-primary/70" />
+          <p>{tip}</p>
+        </div>
+      ))}
+    </div>
+  )
+
+  const currentSlide = slides[activeIndex]
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
-  return (
-    <div>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2">Insights</h2>
-        <p className="text-muted-foreground">
-          AI-generated insights about your cognitive patterns
-        </p>
+  if (!currentSlide) {
+    return (
+      <div className="flex min-h-[calc(100vh-6rem)] items-center justify-center text-muted-foreground">
+        No insights available yet. Start tracking your brain data!
       </div>
+    )
+  }
 
-      <div className="space-y-8">
-        {/* Daily Summary */}
-        <div className="rounded-3xl border border-border/40 bg-card/60 p-6 shadow-xl shadow-primary/15 backdrop-blur">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/20">
-                <Lightbulb className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Daily Summary</p>
-                <h3 className="text-2xl font-semibold text-foreground">
-                  {headline ?? 'Insightful Moments'}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {dailyInsights?.date
-                    ? `Generated for ${new Date(dailyInsights.date).toLocaleDateString()}`
-                    : 'Up-to-the-minute reflections on your cognitive patterns.'}
-                </p>
-              </div>
-            </div>
+  return (
+    <div className="flex min-h-[calc(100vh-6rem)] flex-col items-center">
+      <div className="w-full max-w-5xl flex-1">
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 shadow-inner shadow-primary/20">
+            <Lightbulb className="h-7 w-7 text-primary" />
           </div>
-
-          <div className="mt-6 grid gap-5 lg:grid-cols-2">
-            {sections.length > 0 ? (
-              sections.map((section) => (
-                <DailySectionCard key={section.title} section={section} />
-              ))
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border/40 p-6 text-sm text-muted-foreground">
-                No insights available yet. Start tracking your brain data!
-              </div>
-            )}
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.4em] text-primary/70">Daily Summary</p>
+            <h2 className="text-3xl font-semibold text-foreground">
+              {summaryTitle.replace(/^#+\s*/, "")}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {summaryDateLabel ? `Generated for ${summaryDateLabel}` : "Latest available insights"}
+            </p>
           </div>
         </div>
 
-        {/* Metrics */}
-        {dailyInsights?.metrics && (
-          <div className="rounded-3xl border border-border/40 bg-card/60 p-6 shadow-lg shadow-primary/15 backdrop-blur">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Momentum</p>
-                <h3 className="text-xl font-semibold">Today's Metrics</h3>
-              </div>
-            </div>
+        <div className="relative">
+          <SlideContent
+            key={activeIndex}
+            slide={currentSlide}
+            renderSummarySection={renderSummarySection}
+            renderMetricsSection={renderMetricsSection}
+            renderTipsSection={renderTipsSection}
+          />
+        </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl border border-border/50 bg-secondary/40 p-5 text-foreground">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Cognitive Score
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-primary">
-                  {dailyInsights.metrics.cognitive_score}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Composite score of focus, balance, and stress moderation.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-border/50 bg-secondary/40 p-5 text-foreground">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Focus Time
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-primary">
-                  {dailyInsights.metrics.focus_time.toFixed(0)}%
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Time spent in deep focus and creative flow states.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-border/50 bg-secondary/40 p-5 text-foreground">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Stress Level
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-primary">
-                  {dailyInsights.metrics.stress_level.toFixed(0)}%
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Staying low here means smoother cognitive transitions.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-border/50 bg-secondary/40 p-5 text-foreground">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Deep Focus
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-primary">
-                  {dailyInsights.metrics.state_distribution.deep_focus.toFixed(0)}%
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Anchor state powering your peak productivity.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tips */}
-        <div className="rounded-3xl border border-border/40 bg-card/60 p-6 shadow-lg shadow-primary/15 backdrop-blur">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Keep Momentum</p>
-              <h3 className="text-xl font-semibold">Quick Tips</h3>
-            </div>
-          </div>
-          <ul className="grid gap-3 md:grid-cols-3">
-            {[
-              'Ask the chat assistant targeted questions to dive deeper into your patterns.',
-              'Review your dashboard daily to monitor how focus and stress evolve.',
-              'Compare time periods to identify habits that amplify your best cognitive states.',
-            ].map((tip, idx) => (
-              <li
-                key={idx}
-                className="group rounded-2xl border border-border/30 bg-secondary/30 p-4 transition hover:border-primary/50 hover:bg-secondary/60"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary/70 transition group-hover:bg-primary" />
-                  <p className="text-sm text-foreground/90">{tip}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+        <div className="mt-8 flex items-center justify-center gap-6">
+          <button
+            type="button"
+            onClick={() => setActiveIndex((prev) => Math.max(prev - 1, 0))}
+            disabled={activeIndex === 0}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-border/50 bg-card/70 text-foreground transition hover:border-primary/50 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+            {activeIndex + 1} / {slides.length}
+          </span>
+          <button
+            type="button"
+            onClick={() => setActiveIndex((prev) => Math.min(prev + 1, slides.length - 1))}
+            disabled={activeIndex === slides.length - 1}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-border/50 bg-card/70 text-foreground transition hover:border-primary/50 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </div>

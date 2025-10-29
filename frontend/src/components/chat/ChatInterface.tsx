@@ -14,39 +14,47 @@ const BULLET_PATTERN = /^(-|\*|\u2022)\s*/
 
 const formatLine = (line: string) => line.replace(BULLET_PATTERN, "").trim()
 
-const splitWithMatches = (text: string) => {
-  const regex = /(\d+\.?\d*%|\b\d+\b|deep focus|stress)/gi
-  const matches = text.match(regex) || []
-  // Split and filter to avoid empty trailing element when text ends with match
-  const parts = text.split(regex).filter((segment, index, arr) => !(segment === "" && index === arr.length - 1))
-
-  const sequence: { type: "text" | "match"; value: string }[] = []
-
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i]
-    if (part) {
-      sequence.push({ type: "text", value: part })
+const highlightTokens = (text: string) => {
+  if (!text) return null
+  
+  // Pattern to match percentages, numbers, and key cognitive terms
+  const pattern = /(\d+\.?\d*%|\b\d+\b|deep focus|creative flow|stress(?:ed)?|focus(?:ed)?|relaxed|drowsy|distracted)/gi
+  
+  const parts: JSX.Element[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  
+  // Reset regex state
+  pattern.lastIndex = 0
+  
+  while ((match = pattern.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      const textBefore = text.slice(lastIndex, match.index)
+      if (textBefore) {
+        parts.push(<span key={`text-${lastIndex}`}>{textBefore}</span>)
+      }
     }
-    if (i < matches.length) {
-      sequence.push({ type: "match", value: matches[i] })
+    
+    // Add highlighted match
+    parts.push(
+      <span key={`match-${match.index}`} className="font-semibold text-primary">
+        {match[0]}
+      </span>
+    )
+    
+    lastIndex = match.index + match[0].length
+  }
+  
+  // Add remaining text
+  if (lastIndex < text.length) {
+    const textAfter = text.slice(lastIndex)
+    if (textAfter) {
+      parts.push(<span key={`text-${lastIndex}`}>{textAfter}</span>)
     }
   }
-
-  return sequence
-}
-
-const highlightTokens = (text: string) => {
-  if (!text) return [text]
-  return splitWithMatches(text).map((segment, index) => {
-    if (segment.type === "match") {
-      return (
-        <span key={`${segment.value}-${index}`} className="font-semibold text-primary">
-          {segment.value}
-        </span>
-      )
-    }
-    return segment.value
-  })
+  
+  return parts.length > 0 ? parts : text
 }
 
 const renderMessageContent = (content: string) => {

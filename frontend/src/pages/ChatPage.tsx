@@ -2,9 +2,9 @@ import { ChatInterface } from '@/components/chat/ChatInterface'
 
 export function ChatPage() {
   return (
-    <div>
-      
+    <div className='flex min-h-[calc(100vh-6rem)]'>
       <ChatInterface />
     </div>
   )
 }
+
