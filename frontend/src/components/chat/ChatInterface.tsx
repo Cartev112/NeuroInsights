@@ -1,13 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react"
-import {
-  Send,
-  Loader2,
-  Sparkles,
-  Brain,
-  MessageCircle,
-  BarChart3,
-  Clock,
-} from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import { chatApi } from "@/services/api"
 import type { Message } from "@/types/brain-data"
 
@@ -60,10 +52,13 @@ const renderMessageContent = (content: string) => {
     } else {
       if (currentList.length > 0) {
         blocks.push(
-          <ul key={`list-${idx}`} className="space-y-2">
+          <ul key={`list-${idx}`} className="space-y-1.5">
             {currentList.map((item, itemIdx) => (
-              <li key={itemIdx} className="flex items-start gap-2 text-sm text-foreground/90">
-                <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary/70" />
+              <li
+                key={itemIdx}
+                className="flex items-start gap-2 text-[0.95rem] text-foreground/95"
+              >
+                <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/60" />
                 <span>{highlightTokens(item)}</span>
               </li>
             ))}
@@ -73,7 +68,7 @@ const renderMessageContent = (content: string) => {
       }
       if (trimmed.length > 0) {
         blocks.push(
-          <p key={`p-${idx}`} className="text-sm leading-relaxed text-foreground/90">
+          <p key={`p-${idx}`} className="text-[0.98rem] leading-relaxed text-foreground/95">
             {highlightTokens(trimmed)}
           </p>,
         )
@@ -83,10 +78,10 @@ const renderMessageContent = (content: string) => {
 
   if (currentList.length > 0) {
     blocks.push(
-      <ul key="list-final" className="space-y-2">
+      <ul key="list-final" className="space-y-1.5">
         {currentList.map((item, itemIdx) => (
-          <li key={itemIdx} className="flex items-start gap-2 text-sm text-foreground/90">
-            <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary/70" />
+          <li key={itemIdx} className="flex items-start gap-2 text-[0.95rem] text-foreground/95">
+            <span className="mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/60" />
             <span>{highlightTokens(item)}</span>
           </li>
         ))}
@@ -105,24 +100,24 @@ const MessageBubble = ({ message }: { message: Message }) => {
       <div className="flex max-w-[75%] items-start gap-3">
         {!isUser && (
           <div className="hidden md:flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/25">
-            <Brain className="h-5 w-5 text-primary" />
+            <span className="text-lg font-semibold text-primary">NI</span>
           </div>
         )}
         <div
           className={`group rounded-2xl border px-5 py-4 shadow-lg transition backdrop-blur
             ${
               isUser
-                ? "border-white/25 bg-white/15 text-foreground shadow-black/20"
-                : "border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-transparent text-foreground shadow-primary/20"
+                ? "border-white/20 bg-white/10 text-foreground shadow-black/20"
+                : "border-primary/40 bg-gradient-to-br from-primary/22 via-primary/12 to-transparent text-foreground shadow-primary/25"
             }
           `}
         >
           <div className="mb-2 flex items-center gap-3">
-            <span className="text-xs uppercase tracking-[0.3em] text-primary/80">
+            <span className="text-xs uppercase tracking-[0.35em] text-primary/75">
               {isUser ? "You" : "NeuroInsights"}
             </span>
             {!isUser && (
-              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+              <span className="rounded-full bg-primary/25 px-2 py-0.5 text-[11px] font-medium text-primary/90">
                 Cognitive Coach
               </span>
             )}
@@ -206,7 +201,7 @@ export function ChatInterface() {
         <button
           key={suggestion}
           onClick={() => handleSuggestionClick(suggestion)}
-          className="rounded-full border border-primary/40 bg-primary/15 px-4 py-2 text-sm font-medium text-primary transition hover:border-primary/60 hover:bg-primary/25"
+          className="rounded-full border border-primary/35 bg-primary/12 px-4 py-2 text-sm font-medium text-primary transition hover:border-primary/55 hover:bg-primary/20"
           type="button"
           disabled={isLoading}
         >
@@ -219,40 +214,6 @@ export function ChatInterface() {
   return (
     <div className="relative flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-3xl border border-border/40 bg-card/40 shadow-[0_30px_80px_-40px_rgba(124,58,237,0.45)] backdrop-blur">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.15),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(244,114,182,0.12),transparent_45%)]" />
-
-      {/* Header */}
-      <div className="relative flex items-center justify-between border-b border-border/40 px-6 py-4">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/25 shadow-inner shadow-primary/30">
-            <Brain className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xl font-semibold">NeuroInsights Coach</h3>
-              <span className="rounded-full bg-primary/20 px-2 py-[2px] text-[11px] font-medium text-primary">
-                Live
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Ask questions about your cognitive rhythms and get data-backed guidance.
-            </p>
-          </div>
-        </div>
-        <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1">
-            <MessageCircle className="h-3.5 w-3.5 text-primary" />
-            Conversational
-          </span>
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1">
-            <BarChart3 className="h-3.5 w-3.5 text-primary" />
-            Data aware
-          </span>
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1">
-            <Clock className="h-3.5 w-3.5 text-primary" />
-            Real-time
-          </span>
-        </div>
-      </div>
 
       {/* Suggestions */}
       <div className="relative border-b border-border/30 px-6 py-4">
@@ -267,7 +228,7 @@ export function ChatInterface() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-primary/20 px-5 py-3 text-primary">
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-primary/18 px-5 py-3 text-primary/90">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Analyzing your cognitive signals...</span>
               </div>
@@ -286,7 +247,7 @@ export function ChatInterface() {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask about your brain data..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="flex-1 bg-transparent text-[1rem] text-foreground placeholder:text-muted-foreground focus:outline-none"
             disabled={isLoading}
           />
           <button
