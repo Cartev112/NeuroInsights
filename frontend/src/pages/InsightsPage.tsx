@@ -76,7 +76,7 @@ const SlideContent = ({
 
   return (
     <div
-      className={`mx-auto w-full max-w-5xl rounded-3xl border border-border/50 bg-card/70 p-8 shadow-[0_25px_80px_-50px_rgba(124,58,237,0.45)] backdrop-blur transition-all duration-500 ${
+      className={`mx-auto w-full max-w-5xl rounded-3xl border border-border/50 bg-card/70 p-10 shadow-[0_25px_80px_-50px_rgba(124,58,237,0.45)] backdrop-blur transition-all duration-500 ${
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
       }`}
     >
@@ -135,7 +135,20 @@ export function InsightsPage() {
     <div className="mx-auto w-full max-w-3xl space-y-5 text-left text-[1.02rem] leading-relaxed text-foreground/95">
       <h4 className="text-lg font-semibold text-primary">{section.title}</h4>
       {section.paragraphs.map((paragraph, index) => (
-        <p key={`paragraph-${index}`}>{paragraph}</p>
+        <p key={`paragraph-${index}`}>
+          {paragraph
+            .split(/(\*\*[^*]+\*\*)/)
+            .filter(Boolean)
+            .map((chunk, i) =>
+              chunk.startsWith("**") && chunk.endsWith("**") ? (
+                <strong key={`strong-${i}`} className="text-primary">
+                  {chunk.slice(2, -2)}
+                </strong>
+              ) : (
+                <span key={`span-${i}`}>{chunk}</span>
+              ),
+            )}
+        </p>
       ))}
       {section.bullets.length > 0 && (
         <ul className="space-y-2">
@@ -232,17 +245,19 @@ export function InsightsPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-6rem)] flex-col items-center">
-      <div className="w-full max-w-5xl flex-1">
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 shadow-inner shadow-primary/20">
-            <Lightbulb className="h-7 w-7 text-primary" />
+      <div className="w-full max-w-5xl flex-1 px-4">
+        <div className="flex flex-col items-center gap-2 py-4 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 shadow-inner shadow-primary/20">
+            <Lightbulb className="h-6 w-6 text-primary" />
           </div>
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.4em] text-primary/70">Daily Summary</p>
-            <h2 className="text-3xl font-semibold text-foreground">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-primary/70">
+              Daily Summary
+            </p>
+            <h2 className="text-2xl font-semibold text-foreground">
               {summaryTitle.replace(/^#+\s*/, "")}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {summaryDateLabel ? `Generated for ${summaryDateLabel}` : "Latest available insights"}
             </p>
           </div>

@@ -28,6 +28,18 @@ export interface CognitiveScore {
   end_time: string
 }
 
+export interface ActivitySegment {
+  activity: string
+  start_time: string
+  end_time: string
+  duration_minutes: number
+  dominant_state: string
+  state_distribution: Record<string, number>
+  focus_percentage: number
+  average_confidence: number
+  source: string
+}
+
 export interface Message {
   role: 'user' | 'assistant'
   content: string

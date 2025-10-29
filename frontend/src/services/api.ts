@@ -91,6 +91,17 @@ export const dataApi = {
     })
     return response.data
   },
+
+  getActivities: async (startTime: string, endTime: string, minDuration = 5) => {
+    const response = await api.get('/data/activities', {
+      params: {
+        start_time: startTime,
+        end_time: endTime,
+        min_duration: minDuration,
+      },
+    })
+    return response.data
+  },
 }
 
 // Insights API

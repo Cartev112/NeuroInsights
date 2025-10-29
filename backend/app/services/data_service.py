@@ -1,5 +1,6 @@
 """Service for brain data operations"""
 
+from collections import defaultdict
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -208,6 +209,154 @@ class DataService:
         logger.debug("Computed cognitive score: %s", score)
         
         return score
+
+    async def get_activities(
+        self,
+        user_id: UUID,
+        start_time: datetime,
+        end_time: datetime,
+        min_duration_minutes: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Build activity timeline within a window.
+        Groups consecutive minutes that share the same activity label (or inferred label).
+        """
+
+        data_points = await self.get_brain_data(
+            user_id,
+            start_time,
+            end_time,
+            granularity="minute"
+        )
+
+        if not data_points:
+            logger.debug("No data points available for activity timeline.")
+            return []
+
+        normalized_points = []
+        for point in data_points:
+            point_time = point.get("time")
+            if isinstance(point_time, str):
+                try:
+                    point_time = datetime.fromisoformat(point_time)
+                except ValueError:
+                    logger.debug("Failed ISO parse for point time %s; skipping point.", point.get("time"))
+                    continue
+            if not isinstance(point_time, datetime):
+                continue
+
+            normalized_point = dict(point)
+            normalized_point["time"] = point_time
+            normalized_point["activity"] = normalized_point.get("activity")
+            normalized_point["state"] = normalized_point.get("state") or "unknown"
+            if not normalized_point["activity"]:
+                normalized_point["activity"] = self._infer_activity_from_state(normalized_point["state"])
+                normalized_point["_activity_source"] = "inferred"
+            else:
+                normalized_point["_activity_source"] = "scenario"
+            normalized_point["confidence"] = normalized_point.get("confidence", 0.7)
+
+            normalized_points.append(normalized_point)
+
+        if not normalized_points:
+            return []
+
+        normalized_points.sort(key=lambda p: p["time"])
+
+        activities: List[Dict[str, Any]] = []
+        current_segment: Optional[Dict[str, Any]] = None
+
+        def finalize_segment(segment: Optional[Dict[str, Any]]):
+            if not segment:
+                return
+
+            duration_minutes = max(
+                1,
+                round(
+                    (segment["end_time"] - segment["start_time"]).total_seconds() / 60
+                ),
+            )
+
+            if duration_minutes < max(1, min_duration_minutes):
+                logger.debug(
+                    "Discarding short activity segment %s lasting %s minutes",
+                    segment["activity"],
+                    duration_minutes,
+                )
+                return
+
+            total_state_counts = sum(segment["state_counts"].values())
+            if total_state_counts == 0:
+                total_state_counts = 1  # avoid division by zero
+
+            state_distribution = {
+                state: round(count / total_state_counts * 100, 1)
+                for state, count in segment["state_counts"].items()
+            }
+
+            dominant_state = max(
+                segment["state_counts"],
+                key=lambda state: segment["state_counts"][state],
+                default="unknown",
+            )
+
+            focus_minutes = (
+                segment["state_counts"].get("deep_focus", 0)
+                + segment["state_counts"].get("creative_flow", 0)
+            )
+            focus_percentage = round(focus_minutes / total_state_counts * 100, 1)
+
+            avg_confidence = round(
+                segment["confidence_total"] / max(1, segment["points_count"]), 2
+            )
+
+            activities.append(
+                {
+                    "activity": segment["activity"],
+                    "start_time": segment["start_time"].isoformat(),
+                    "end_time": segment["end_time"].isoformat(),
+                    "duration_minutes": duration_minutes,
+                    "state_distribution": state_distribution,
+                    "dominant_state": dominant_state,
+                    "focus_percentage": focus_percentage,
+                    "average_confidence": avg_confidence,
+                    "source": segment["activity_source"],
+                }
+            )
+
+        for point in normalized_points:
+            activity_name = point["activity"]
+            state = point["state"]
+            timestamp = point["time"]
+            minute_end = min(timestamp + timedelta(minutes=1), end_time)
+
+            if current_segment and activity_name == current_segment["activity"]:
+                current_segment["end_time"] = minute_end
+                current_segment["state_counts"][state] += 1
+                current_segment["confidence_total"] += point["confidence"]
+                current_segment["points_count"] += 1
+            else:
+                finalize_segment(current_segment)
+                current_segment = {
+                    "activity": activity_name,
+                    "activity_source": point["_activity_source"],
+                    "start_time": timestamp,
+                    "end_time": minute_end,
+                    "state_counts": defaultdict(int, {state: 1}),
+                    "confidence_total": point["confidence"],
+                    "points_count": 1,
+                }
+
+        finalize_segment(current_segment)
+
+        logger.debug(
+            "Generated %s activity segments between %s and %s",
+            len(activities),
+            start_time.isoformat(),
+            end_time.isoformat(),
+        )
+
+        return activities
     
     async def compare_time_periods(
         self,
@@ -367,6 +516,23 @@ class DataService:
             "total_focus_time": total_focus_time,
             "avg_window_duration": round(avg_duration, 1)
         }
+
+    def _infer_activity_from_state(self, state: Optional[str]) -> str:
+        """Infer a friendly activity label when none is provided."""
+
+        state_activity_map = {
+            "deep_focus": "focus_session",
+            "creative_flow": "creative_work",
+            "relaxed": "restorative_break",
+            "stressed": "high_pressure_task",
+            "drowsy": "fatigue_period",
+            "distracted": "context_switching",
+            "neutral": "light_tasking",
+            "meditative_deep": "meditation",
+            "unknown": "unspecified_activity",
+        }
+
+        return state_activity_map.get(state or "unknown", "unspecified_activity")
     
     def _aggregate_data(
         self,

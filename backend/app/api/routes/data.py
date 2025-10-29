@@ -157,3 +157,39 @@ async def find_patterns(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/activities")
+async def get_activities(
+    start_time: datetime = Query(...),
+    end_time: datetime = Query(...),
+    min_duration: int = Query(5, ge=1),
+    data_service = Depends(get_data_service)
+):
+    """Get activity timeline for a period"""
+
+    try:
+        logger.debug(
+            "API /activities request",
+            extra={
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "min_duration": min_duration,
+            },
+        )
+
+        activities = await data_service.get_activities(
+            MOCK_USER_ID,
+            start_time,
+            end_time,
+            min_duration_minutes=min_duration
+        )
+
+        return {
+            "start_time": start_time,
+            "end_time": end_time,
+            "activities": activities
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

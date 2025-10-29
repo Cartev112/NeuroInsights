@@ -110,6 +110,8 @@ async def execute_tool_calls(
                 result = await handle_find_patterns(user_id, arguments, data_service)
             elif function_name == "get_cognitive_score":
                 result = await handle_get_cognitive_score(user_id, arguments, data_service)
+            elif function_name == "get_activities":
+                result = await handle_get_activities(user_id, arguments, data_service)
             elif function_name == "get_baseline":
                 result = await handle_get_baseline(user_id, data_service)
             else:
@@ -212,6 +214,25 @@ async def handle_get_cognitive_score(user_id, args, data_service):
     return {
         "time_period": args["time_period"],
         "cognitive_score": score
+    }
+
+
+async def handle_get_activities(user_id, args, data_service):
+    """Handle get_activities tool call"""
+
+    time_period = args.get("time_period", "today")
+    start_time, end_time = parse_time_period(time_period)
+
+    activities = await data_service.get_activities(
+        user_id,
+        start_time,
+        end_time,
+        args.get("min_duration_minutes", 5)
+    )
+
+    return {
+        "time_period": time_period,
+        "activities": activities
     }
 
 

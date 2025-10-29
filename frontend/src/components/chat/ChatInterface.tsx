@@ -231,7 +231,7 @@ export function ChatInterface() {
   )
 
   return (
-    <div className="relative flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-3xl border border-border/40 bg-card/40 shadow-[0_30px_80px_-40px_rgba(124,58,237,0.45)] backdrop-blur">
+    <div className="relative flex h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-3xl border border-border/40 bg-card/40 shadow-[0_30px_80px_-40px_rgba(124,58,237,0.45)] backdrop-blur">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.15),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(244,114,182,0.12),transparent_45%)]" />
 
       {/* Assistant identity header */}
