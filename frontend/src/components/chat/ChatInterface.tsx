@@ -14,28 +14,38 @@ const BULLET_PATTERN = /^(-|\*|\u2022)\s*/
 
 const formatLine = (line: string) => line.replace(BULLET_PATTERN, "").trim()
 
-const highlightTokens = (text: string): (string | JSX.Element)[] => {
-  if (!text) return [""]
+const splitWithMatches = (text: string) => {
   const regex = /(\d+\.?\d*%|\b\d+\b|deep focus|stress)/gi
-  const parts = text.split(regex)
   const matches = text.match(regex)
-  const result: (string | JSX.Element)[] = []
+  const parts = text.split(regex)
+
+  const sequence: { type: "text" | "match"; value: string }[] = []
 
   parts.forEach((part, index) => {
     if (part) {
-      result.push(part)
+      sequence.push({ type: "text", value: part })
     }
     const match = matches?.[index]
     if (match) {
-      result.push(
-        <span key={`${match}-${index}`} className="font-semibold text-primary">
-          {match}
-        </span>,
-      )
+      sequence.push({ type: "match", value: match })
     }
   })
 
-  return result
+  return sequence
+}
+
+const highlightTokens = (text: string) => {
+  if (!text) return [text]
+  return splitWithMatches(text).map((segment, index) => {
+    if (segment.type === "match") {
+      return (
+        <span key={`${segment.value}-${index}`} className="font-semibold text-primary">
+          {segment.value}
+        </span>
+      )
+    }
+    return segment.value
+  })
 }
 
 const renderMessageContent = (content: string) => {
@@ -215,9 +225,17 @@ export function ChatInterface() {
     <div className="relative flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-3xl border border-border/40 bg-card/40 shadow-[0_30px_80px_-40px_rgba(124,58,237,0.45)] backdrop-blur">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.15),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(244,114,182,0.12),transparent_45%)]" />
 
-      {/* Suggestions */}
+      {/* Top header */}
       <div className="relative border-b border-border/30 px-6 py-4">
-        <div className="flex flex-wrap gap-3">{suggestionChips}</div>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">Chat with Your Brain Data</h2>
+            <p className="text-sm text-muted-foreground">
+              Ask questions in natural language and get insights about your cognitive patterns.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 pt-2 lg:pt-0">{suggestionChips}</div>
+        </div>
       </div>
 
       {/* Messages */}
