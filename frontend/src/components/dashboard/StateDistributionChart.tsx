@@ -6,13 +6,13 @@ interface StateDistributionChartProps {
 }
 
 const STATE_COLORS = {
-  deep_focus: '#8b5cf6',
-  relaxed: '#3b82f6',
-  stressed: '#ef4444',
-  creative_flow: '#10b981',
-  drowsy: '#f59e0b',
-  distracted: '#6b7280',
-  neutral: '#9ca3af',
+  deep_focus: '#c084fc',
+  relaxed: '#93c5fd',
+  stressed: '#fb7185',
+  creative_flow: '#f9a8d4',
+  drowsy: '#fbcfe8',
+  distracted: '#a5b4fc',
+  neutral: '#ddd6fe',
 }
 
 const STATE_LABELS = {
@@ -62,7 +62,18 @@ export function StateDistributionChart({ data }: StateDistributionChartProps) {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'rgba(139, 92, 246, 0.9)',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              borderRadius: '0.5rem',
+              color: '#ffffff',
+            }}
+            formatter={(value: number, name: string) => [
+              `${value.toFixed(1)}%`,
+              name,
+            ]}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>

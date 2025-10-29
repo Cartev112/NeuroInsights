@@ -14,22 +14,22 @@
   :root {
     --background: 262 65% 18%;
     --foreground: 0 0% 100%;
-    --card: 262 58% 20%;
+    --card: 262 50% 18%;
     --card-foreground: 0 0% 100%;
-    --popover: 262 58% 20%;
+    --popover: 262 50% 18%;
     --popover-foreground: 0 0% 100%;
-    --primary: 270 84% 55%;
+    --primary: 270 72% 62%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 262 50% 22%;
+    --secondary: 262 32% 26%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 262 50% 22%;
+    --muted: 262 32% 26%;
     --muted-foreground: 0 0% 100%;
-    --accent: 270 84% 55%;
+    --accent: 270 72% 62%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
+    --border: 270 12% 70%;
+    --input: 270 12% 70%;
     --ring: 270 84% 55%;
     --radius: 0.5rem;
   }
@@ -51,8 +51,8 @@
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
+    --border: 270 12% 70%;
+    --input: 270 12% 70%;
     --ring: 270 84% 55%;
   }
 }
@@ -66,9 +66,7 @@
     font-family: 'Raleway', sans-serif;
     font-weight: 300;
     font-style: oblique 5deg;
-    background: radial-gradient(circle at top, rgba(139, 92, 246, 0.4), transparent 45%),
-      radial-gradient(circle at bottom, rgba(79, 70, 229, 0.35), transparent 55%),
-      linear-gradient(135deg, #2d0f68 0%, #4c1d95 45%, #6d28d9 100%);
+    background: linear-gradient(140deg, rgba(44, 19, 90, 0.95) 0%, rgba(56, 23, 108, 0.9) 45%, rgba(74, 29, 128, 0.9) 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }

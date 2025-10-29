@@ -6,10 +6,10 @@ interface CognitiveScoreCardProps {
 
 export function CognitiveScoreCard({ score }: CognitiveScoreCardProps) {
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-500'
-    if (score >= 60) return 'text-blue-500'
-    if (score >= 40) return 'text-yellow-500'
-    return 'text-red-500'
+    if (score >= 80) return 'text-[#c084fc]'
+    if (score >= 60) return 'text-[#a78bfa]'
+    if (score >= 40) return 'text-[#f9a8d4]'
+    return 'text-[#fda4af]'
   }
 
   const getScoreLabel = (score: number) => {
@@ -22,7 +22,7 @@ export function CognitiveScoreCard({ score }: CognitiveScoreCardProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Brain className="h-5 w-5 text-primary" />
+        <Brain className="h-5 w-5 text-primary" strokeWidth={1.5} />
         <h3 className="font-semibold">Cognitive Score</h3>
       </div>
       <div className="flex items-end gap-2">
